@@ -73,15 +73,14 @@ int check_result_exists() {
  * Usa O_CREAT | O_EXCL para garantir escrita atômica (apenas um worker escreve)
  */
 void save_result(int worker_id, const char *password) {
-    // TODO 2: Implementar gravação atômica do resultado
-    // OBJETIVO: Garantir que apenas UM worker escreva no arquivo
-    // DICA: Use O_CREAT | O_EXCL - falha se arquivo já existe
-    // FORMATO DO ARQUIVO: "worker_id:password\n"
-    
-    // IMPLEMENTE AQUI:
-    // - Tentar abrir arquivo com O_CREAT | O_EXCL | O_WRONLY
-    // - Se sucesso: escrever resultado e fechar
-    // - Se falhou: outro worker já encontrou
+    int fd = open(RESULT_FILE, O_CREAT | O_EXCL | O_WRONLY, 0644);
+    if (fd >= 0) {
+        char buffer[256];
+        int len = snprintf(buffer, sizeof(buffer), "%d:%s\n", worker_id, password);
+        write(fd, buffer, len);
+        close(fd);
+        printf("[Worker %d] Resultado salvo!\n", worker_id);
+    }
 }
 
 /**
@@ -119,22 +118,25 @@ int main(int argc, char *argv[]) {
     
     // Loop principal de verificação
     while (1) {
-        // TODO 3: Verificar periodicamente se outro worker já encontrou a senha
-        // DICA: A cada PROGRESS_INTERVAL senhas, verificar se arquivo resultado existe
+        if (passwords_checked % PROGRESS_INTERVAL == 0) {
+            if (check_result_exists()) break;
+        }
         
-        // TODO 4: Calcular o hash MD5 da senha atual
-        // IMPORTANTE: Use a biblioteca MD5 FORNECIDA - md5_string(senha, hash_buffer)
-        
-        // TODO 5: Comparar com o hash alvo
-        // Se encontrou: salvar resultado e terminar
-        
-        // TODO 6: Incrementar para a próxima senha
-        // DICA: Use a função increment_password implementada acima
-        
-        // TODO: Verificar se chegou ao fim do intervalo
-        // Se sim: terminar loop
-        
+        md5_string(current_password, computed_hash);
+
         passwords_checked++;
+        
+        if (strcmp(computed_hash, target_hash) == 0) {
+            printf("[Worker %d] SENHA ENCONTRADA: %s\n", worker_id, current_password);
+            save_result(worker_id, current_password);
+            break;
+        }
+    
+        int ok = increment_password(current_password, charset, charset_len, password_len);
+
+        if (!ok || password_compare(current_password, end_password) > 0) {
+            break;
+        }
     }
     
     // Estatísticas finais

@@ -120,18 +120,48 @@ int main(int argc, char *argv[])
 
     pid_t workers[MAX_WORKERS];
 
-    // TODO 3: Criar os processos workers usando fork()
     printf("Iniciando workers...\n");
 
-    // IMPLEMENTE AQUI: Loop para criar workers
     for (int i = 0; i < num_workers; i++)
     {
-        // TODO: Calcular intervalo de senhas para este worker
-        // TODO: Converter indices para senhas de inicio e fim
-        // TODO 4: Usar fork() para criar processo filho
-        // TODO 5: No processo pai: armazenar PID
-        // TODO 6: No processo filho: usar execl() para executar worker
-        // TODO 7: Tratar erros de fork() e execl()
+        char first_passwd[password_len + 1], last_passwd[password_len + 1];
+        index_to_password(i * passwords_per_worker, charset, charset_len, password_len, first_passwd);
+
+        long long end_index;
+        if (i == num_workers - 1)
+        {
+            end_index = (i + 1) * passwords_per_worker + remaining - 1;
+        }
+        else
+        {
+            end_index = (i + 1) * passwords_per_worker - 1;
+        }
+        index_to_password(end_index, charset, charset_len, password_len, last_passwd);
+
+        pid_t pid = fork();
+
+        if (pid < 0)
+        {
+            perror("Erro ao criar worker");
+            exit(1);
+        }
+        else if (pid == 0)
+        {
+            char password_len_str[12];
+            char worker_id_str[12];
+            sprintf(password_len_str, "%d", password_len);
+            sprintf(worker_id_str, "%d", i);
+
+            execl("./worker", "worker", target_hash, first_passwd, last_passwd,
+                  charset, password_len_str, worker_id_str, NULL);
+
+            perror("Erro no execl");
+            exit(1);
+        }
+        else
+        {
+            workers[i] = pid;
+        }
     }
 
     printf("\nTodos os workers foram iniciados. Aguardando conclusão...\n");

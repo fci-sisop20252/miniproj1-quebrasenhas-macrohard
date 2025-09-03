@@ -95,24 +95,7 @@ int main() {
 ```c
 // No coordinator.c
 for (int i = 0; i < num_workers; i++) {
-    pid_t pid = fork();
-    
-    if (pid < 0) {
-        // Erro crítico
-        perror("Erro ao criar worker");
-        exit(1);
-    } else if (pid == 0) {
-        // Processo filho - será substituído pelo worker
-        // Próxima seção: execl()
-        execl("./worker", "worker", /* argumentos */, NULL);
-        
-        // Se execl retornar, houve erro
-        perror("Erro no execl");
-        exit(1);
-    } else {
-        // Processo pai - armazenar PID para wait() posterior
-        worker_pids[i] = pid;
-    }
+    y
 }
 ```
 

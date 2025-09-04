@@ -171,9 +171,31 @@ int main(int argc, char *argv[])
 
     // IMPLEMENTE AQUI:
     // - Loop para aguardar cada worker terminar
-    // - Usar wait() para capturar status de saída
-    // - Identificar qual worker terminou
-    // - Verificar se terminou normalmente ou com erro
+    int finished_count = 0;
+    for(int i = 0; i < num_workers; i++)
+    {
+      // - Usar wait() para capturar status de saída
+      int status;
+      pid_t pid = wait(&status);
+      int worker_index = 0;
+      for(int i = 0; i < num_workers; i++){
+        if (pid == workers[i])
+        {
+          worker_index = i;
+          break;
+        }
+      }
+      if (!WIFEXITED(status)){
+        printf("ERRO: worker terminou com erro");
+        exit(1);}
+
+      int exit_code = WEXITSTATUS(status); 
+
+       
+      finished_count++;
+      
+    }
+    // - Identificar qual worker terminou- Verificar se terminou normalmente ou com erro
     // - Contar quantos workers terminaram
 
     // Registrar tempo de fim
@@ -187,6 +209,23 @@ int main(int argc, char *argv[])
 
     // IMPLEMENTE AQUI:
     // - Abrir arquivo RESULT_FILE para leitura
+    int fd = open(RESULT_FILE, O_RDONLY);
+    if (fd >= 0){
+      char buffer[1024];
+      
+      read(fd, buffer, 1024);
+      char *pass = strchr(buffer, ':');
+      pass++; 
+      pass[password_len] = 0;
+      char hash[33];
+      md5_string(pass, hash);
+      if( ! strcmp(hash, target_hash))
+        printf("Senha Encontrada com sucesso!: %s", pass);
+      else
+        printf("Senha não encontrada!");
+
+    
+  } 
     // - Ler conteúdo do arquivo
     // - Fazer parse do formato "worker_id:password"
     // - Verificar o hash usando md5_string()

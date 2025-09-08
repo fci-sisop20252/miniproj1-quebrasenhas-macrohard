@@ -1,6 +1,6 @@
 # Relatório: Mini-Projeto 1 - Quebra-Senhas Paralelo
 
-**Aluno(s):** Nome (Matrícula), Nome (Matrícula),,,  
+Enzo Lopes Campanholo (10190463), Gian Lucca Campanha (10438361), Felipe Bonatto Zwaizdis Scaquetti (10438149)
 ---
 
 ## 1. Estratégia de Paralelização
@@ -12,7 +12,8 @@
 
 **Código relevante:** Cole aqui a parte do coordinator.c onde você calcula a divisão:
 ```c
-// Cole seu código de divisão aqui
+long long passwords_per_worker = total_space / num_workers;
+long long remaining = total_space % num_workers;
 ```
 
 ---
@@ -25,7 +26,47 @@
 
 **Código do fork/exec:**
 ```c
-// Cole aqui seu loop de criação de workers
+for (int i = 0; i < num_workers; i++)
+{
+    char first_passwd[password_len + 1], last_passwd[password_len + 1];
+    index_to_password(i * passwords_per_worker, charset, charset_len, password_len, first_passwd);
+
+    long long end_index;
+    if (i == num_workers - 1)
+    {
+        end_index = (i + 1) * passwords_per_worker + remaining - 1;
+    }
+    else
+    {
+        end_index = (i + 1) * passwords_per_worker - 1;
+    }
+    index_to_password(end_index, charset, charset_len, password_len, last_passwd);
+
+    pid_t pid = fork();
+
+    if (pid < 0)
+    {
+        perror("Erro ao criar worker");
+        exit(1);
+    }
+    else if (pid == 0)
+    {
+        char password_len_str[12];
+        char worker_id_str[12];
+        sprintf(password_len_str, "%d", password_len);
+        sprintf(worker_id_str, "%d", i);
+
+        execl("./worker", "worker", target_hash, first_passwd, last_passwd,
+              charset, password_len_str, worker_id_str, NULL);
+
+        perror("Erro no execl");
+        exit(1);
+    }
+    else
+    {
+        workers[i] = pid;
+    }
+}
 ```
 
 ---

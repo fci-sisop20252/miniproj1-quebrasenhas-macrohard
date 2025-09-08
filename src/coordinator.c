@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
         char hash[33];
         md5_string(pass, hash);
         if (!strcmp(hash, target_hash))
-            printf("Senha Encontrada com sucesso!: %s", pass);
+            printf("Senha Encontrada com sucesso!: %s\n", pass);
         else
             printf("Senha não encontrada!");
     }

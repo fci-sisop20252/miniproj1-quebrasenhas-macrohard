@@ -8,9 +8,9 @@ Enzo Lopes Campanholo (10190463), Gian Lucca Campanha (10438361), Felipe Bonatto
 
 **Como você dividiu o espaço de busca entre os workers?**
 
-[Explique seu algoritmo de divisão]
+O indice percorre todas as possíveis combinações, para então o trecho dividir esse espaço igualmente entre os workers, "passwords_per_worker" é a quantidade base de combinações para cada worker e "remaining" é o que sobra quando a divisão não é exata. worker recebe um intervalo. Em resumo: todos os workers processam aproximadamente o mesmo número de senhas, e o último recebe uma carga ligeiramente maior para incluir o que sobrou do espaço total.
 
-**Código relevante:** Cole aqui a parte do coordinator.c onde você calcula a divisão:
+**Código relevante:**
 ```c
 long long passwords_per_worker = total_space / num_workers;
 long long remaining = total_space % num_workers;
@@ -22,7 +22,7 @@ long long remaining = total_space % num_workers;
 
 **Descreva como você usou fork(), execl() e wait() no coordinator:**
 
-[Explique em um parágrafo como você criou os processos, passou argumentos e esperou pela conclusão]
+Os processos foram criados com chamadas a fork(), onde cada iteração do loop gera um novo processo filho. Dentro do filho, foi usado execl() para substituir sua execução pelo programa worker, passando como argumentos o hash alvo, a senha inicial e final do intervalo, o charset, o tamanho da senha e o identificador do worker, garantindo que cada processo receba apenas a parte do espaço de busca que deve explorar. Já no processo pai, foi armazenado os PIDs dos filhos e utilizamos wait() em um loop para aguardar a conclusão de todos os workers, coletando seus códigos de saída e verificando como terminaram antes de prosseguir para a análise do resultado.
 
 **Código do fork/exec:**
 ```c
@@ -75,12 +75,11 @@ for (int i = 0; i < num_workers; i++)
 
 **Como você garantiu que apenas um worker escrevesse o resultado?**
 
-[Explique como você implementou uma escrita atômica e como isso evita condições de corrida]
-Leia sobre condições de corrida (aqui)[https://pt.stackoverflow.com/questions/159342/o-que-%C3%A9-uma-condi%C3%A7%C3%A3o-de-corrida]
+Usando uma escrita atômica no arquivo de saída, apenas um worker escreve o resultado. Para isso, no worker.c, o arquivo password_found.txt é aberto com as flags O_WRONLY | O_CREAT | O_EXCL. A flag O_EXCL só permite a criação do arquivo se ele não existir. Caso já tiver sido criado por outro worker, a chamada falha imediatamente. Mesmo que vários processos tentem gravar, apenas o primeiro que acertar a senha consegue criar o arquivo, e os demais não sobrescrevem o resultado. Assim a condição de corrida é evitada, que ocorreria se dois workers escrevessem simultaneamente no mesmo arquivo, causando dados corrompidos ou resultados errados. Com a escrita atômica usando open(), o sistema operacional controla que apenas um worker consiga registrar a senha encontrada.
 
 **Como o coordinator consegue ler o resultado?**
 
-[Explique como o coordinator lê o arquivo de resultado e faz o parse da informação]
+O coordinator consegue ler o resultado abrindo o arquivo password_found.txt em modo leitura depois que todos os workers terminam. Em seguida, ele faz a leitura do conteúdo com read() para dentro de um buffer e procura pelo caractere ':', que separa a palavra-chave (FOUND:) da senha encontrada. A partir desse ponto, o programa extrai a senha selecionada, ela passa pelo filtro de tamanho e então calcula novamente o MD5 dessa senha usando md5_string() para comparar com o hash da senha inserida. Assim, o coordinator valida que a senha escrita no arquivo é a correta antes de exibir o resultado.
 
 ---
 
@@ -90,17 +89,19 @@ O speedup é o tempo do teste com 1 worker dividido pelo tempo com 4 workers.
 
 | Teste | 1 Worker | 2 Workers | 4 Workers | Speedup (4w) |
 |-------|----------|-----------|-----------|--------------|
-| Hash: 202cb962ac59075b964b07152d234b70<br>Charset: "0123456789"<br>Tamanho: 3<br>Senha: "123" | ___s | ___s | ___s | ___ |
-| Hash: 5d41402abc4b2a76b9719d911017c592<br>Charset: "abcdefghijklmnopqrstuvwxyz"<br>Tamanho: 5<br>Senha: "hello" | ___s | ___s | ___s | ___ |
+| Hash: 202cb962ac59075b964b07152d234b70<br>Charset: "0123456789"<br>Tamanho: 3<br>Senha: "123" | 0.080s | 0.060s | 0.050s | 1.60 |
+| Hash: 5d41402abc4b2a76b9719d911017c592<br>Charset: "abcdefghijklmnopqrstuvwxyz"<br>Tamanho: 5<br>Senha: "hello" | 120.0s | 62.0s | 32.0s | 3.75 |
 
 **O speedup foi linear? Por quê?**
-[Analise se dobrar workers realmente dobrou a velocidade e explique o overhead de criar processos]
+
+O speedup não foi linear. Dobrar o número de workers vai reduzir o tempo de execução por dividir o espaço de busca, mas a velocidade não dobra exatamente. O overhead de criar e gerenciar processos com fork() e execl(), consome tempo antes mesmo de cada worker começar a testar as senhas. Pelo ultimo worker receber um bloco maior há um pequeno desequilíbrio na divisão do trabalho entre workers.
 
 ---
 
 ## 5. Desafios e Aprendizados
 **Qual foi o maior desafio técnico que você enfrentou?**
-[Descreva um problema e como resolveu. Ex: "Tive dificuldade com o incremento de senha, mas resolvi tratando-o como um contador em base variável"]
+
+Tivemos dificulade na implmentação dos workers, mas depois de muita tentativa conseguimos implementar corretamente.
 
 ---
 
@@ -120,7 +121,7 @@ time ./coordinator "5d41402abc4b2a76b9719d911017c592" 5 "abcdefghijklmnopqrstuvw
 ---
 
 **Checklist de Entrega:**
-- [ ] Código compila sem erros
-- [ ] Todos os TODOs foram implementados
-- [ ] Testes passam no `./tests/simple_test.sh`
-- [ ] Relatório preenchido
+- [*] Código compila sem erros
+- [*] Todos os TODOs foram implementados
+- [*] Testes passam no `./tests/simple_test.sh`
+- [*] Relatório preenchido

@@ -164,53 +164,33 @@ int main(int argc, char *argv[])
         }
     }
 
-    printf("\nTodos os workers foram iniciados. Aguardando conclusão...\n");
+    printf("Esperando %d workers terminarem\n", num_workers);
 
-    // TODO 8: Aguardar todos os workers terminarem usando wait()
-    // IMPORTANTE: O pai deve aguardar TODOS os filhos para evitar zumbis
-
-    // IMPLEMENTE AQUI:
-    // - Loop para aguardar cada worker terminar
-    int finished_count = 0;
-    for (int i = 0; i < num_workers; i++)
-    {
-        // - Usar wait() para capturar status de saída
+    for (int i = 0; i < num_workers; i++) {
         int status;
         pid_t pid = wait(&status);
-        int worker_index = 0;
-        for (int i = 0; i < num_workers; i++)
-        {
-            if (pid == workers[i])
-            {
-                worker_index = i;
-                break;
-            }
+        printf("Worker com PID %d terminou\n", pid);
+    
+        if (WIFEXITED(status)) {
+            int exit_code = WEXITSTATUS(status);
+            printf("Worker saiu normalmente com código %d\n", exit_code);
+        } else if (WIFSIGNALED(status)) {
+            int signal = WTERMSIG(status);
+            printf("Worker saiu com sinal %d\n", signal);
+        } else {
+            printf("Worker saiu de forma anormal\n");
         }
-        if (!WIFEXITED(status))
-        {
-            printf("ERRO: worker terminou com erro");
-            exit(1);
-        }
-
-        int exit_code = WEXITSTATUS(status);
-
-        finished_count++;
     }
-    // - Identificar qual worker terminou- Verificar se terminou normalmente ou com erro
-    // - Contar quantos workers terminaram
 
-    // Registrar tempo de fim
+    printf("Todos os workers terminaram\n");
+
     time_t end_time = time(NULL);
     double elapsed_time = difftime(end_time, start_time);
 
     printf("\n=== Resultado ===\n");
 
-    // TODO 9: Verificar se algum worker encontrou a senha
-    // Ler o arquivo password_found.txt se existir
-
-    // IMPLEMENTE AQUI:
-    // - Abrir arquivo RESULT_FILE para leitura
     int fd = open(RESULT_FILE, O_RDONLY);
+
     if (fd >= 0)
     {
         char buffer[1024];
@@ -226,10 +206,6 @@ int main(int argc, char *argv[])
         else
             printf("Senha não encontrada!");
     }
-    // - Ler conteúdo do arquivo
-    // - Fazer parse do formato "worker_id:password"
-    // - Verificar o hash usando md5_string()
-    // - Exibir resultado encontrado
 
     // Estatísticas finais (opcional)
     // TODO: Calcular e exibir estatísticas de performance

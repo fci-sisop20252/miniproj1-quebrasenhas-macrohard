@@ -1,6 +1,6 @@
 # Relatório: Mini-Projeto 1 - Quebra-Senhas Paralelo
 
-Enzo Lopes Campanholo (10190463), Gian Lucca Campanha (10438361), Felipe Bonatto Zwaizdis Scaquetti (10438149)
+Enzo Lopes Campanholo (10190463) | Gian Lucca Campanha (10438361) | Felipe Bonatto Zwaizdis Scaquetti (10438149)
 ---
 
 ## 1. Estratégia de Paralelização
@@ -89,8 +89,8 @@ O speedup é o tempo do teste com 1 worker dividido pelo tempo com 4 workers.
 
 | Teste | 1 Worker | 2 Workers | 4 Workers | Speedup (4w) |
 |-------|----------|-----------|-----------|--------------|
-| Hash: 202cb962ac59075b964b07152d234b70<br>Charset: "0123456789"<br>Tamanho: 3<br>Senha: "123" | 0.080s | 0.060s | 0.050s | 1.60 |
-| Hash: 5d41402abc4b2a76b9719d911017c592<br>Charset: "abcdefghijklmnopqrstuvwxyz"<br>Tamanho: 5<br>Senha: "hello" | 120.0s | 62.0s | 32.0s | 3.75 |
+| Hash: 202cb962ac59075b964b07152d234b70<br>Charset: "0123456789"<br>Tamanho: 3<br>Senha: "123" | 0,010s | 0,011s | 0,009s | 1,11 |
+| Hash: 5d41402abc4b2a76b9719d911017c592<br>Charset: "abcdefghijklmnopqrstuvwxyz"<br>Tamanho: 5<br>Senha: "hello" | 4,594s | 4,624s | 0,866s | 5,30 |
 
 **O speedup foi linear? Por quê?**
 
@@ -121,7 +121,7 @@ time ./coordinator "5d41402abc4b2a76b9719d911017c592" 5 "abcdefghijklmnopqrstuvw
 ---
 
 **Checklist de Entrega:**
-- [*] Código compila sem erros
-- [*] Todos os TODOs foram implementados
-- [*] Testes passam no `./tests/simple_test.sh`
-- [*] Relatório preenchido
+- [x] Código compila sem erros
+- [x] Todos os TODOs foram implementados
+- [x] Testes passam no `./tests/simple_test.sh`
+- [x] Relatório preenchido
